@@ -2,9 +2,8 @@
 ## Sta je to?
 To je program koji sluzi za embedovanje manifest fajlova u .exe fajl.
 ## Kako radi?
-Koristi funkcije is Windows API-a kako bi ubacio manifest definisan u kodu.
+Koristi funkcije is Windows API-a kako bi ubacio manifest u .exe fajl.
+## Upotreba
+Odaberes .exe fajl, odaberes .manifest fajl (opcionalno) i kliknes "Build".
 
-## Opcije
-Trenuto se moze embedovati samo manifest definisan u kodu, ali cu dodati funkcijonalnost za biranje manifesta.
-
-![image](https://github.com/user-attachments/assets/cd7ff935-8a21-41b6-b1b0-1f5526b13a66)
+![image](https://github.com/user-attachments/assets/4fb37814-0b9c-4d2c-a078-afdef69dba89)
