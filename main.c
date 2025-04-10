@@ -118,7 +118,9 @@ BOOL updateManifest(const char *output, const char *manifest)
 }
 
 char exePath[MAX_PATH];
+char manifestPath[MAX_PATH];
 HWND buildButton;
+BOOL selected = FALSE;
 
 LRESULT CALLBACK WindowProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
 {
@@ -132,17 +134,27 @@ LRESULT CALLBACK WindowProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
             if(LOWORD(wParam) == 1 && HIWORD(wParam) == BN_CLICKED)
             {
                 char msg[2048];
-                sprintf(msg, "Your executable is %s, correct?", exePath);
+                sprintf(msg, "Your executable is \"%s\" and manifest \"%s\", correct?", exePath, (strlen(manifestPath) > 0) ? manifestPath : "default");
                 int q = MessageBox(hwnd, msg, "Manifest Builder", MB_YESNO | MB_ICONQUESTION);
                 if(q == IDNO)
                     break;
-                char manifestName[MAX_PATH];
-                createManifest("temp.exe.manifest");
-                if(updateManifest(exePath, "temp.exe.manifest"))
-                    MessageBox(NULL, "Build successful!", "Manifest Builder", MB_OK | MB_ICONINFORMATION);
+                if(!selected)
+                {
+                    createManifest("temp.exe.manifest");
+                    if(updateManifest(exePath, "temp.exe.manifest"))
+                        MessageBox(NULL, "Build successful!", "Manifest Builder", MB_OK | MB_ICONINFORMATION);
+                    else
+                        MessageBox(NULL, "Failed to update executable.", "Error", MB_OK | MB_ICONERROR);
+                    remove("temp.exe.manifest");
+                }
                 else
-                    MessageBox(NULL, "Failed to update executable.", "Error", MB_OK | MB_ICONERROR);
-                remove("temp.exe.manifest");
+                {
+                    if(updateManifest(exePath, manifestPath))
+                        MessageBox(NULL, "Build successful!", "Manifest Builder", MB_OK | MB_ICONINFORMATION);
+                    else
+                        MessageBox(NULL, "Failed to update executable.", "Error", MB_OK | MB_ICONERROR);
+                    remove(manifestPath);
+                }
             }
             else if(LOWORD(wParam) == 2 && HIWORD(wParam) == BN_CLICKED)
             {
@@ -160,6 +172,34 @@ LRESULT CALLBACK WindowProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
                 if(GetOpenFileNameA(&ofn))
                 {
                     strcpy(exePath, szFile);
+                }
+                else
+                {
+                    DWORD dwError = CommDlgExtendedError();
+                    if(dwError != 0)
+                    {
+                        char szErrorMessage[256];
+                        snprintf(szErrorMessage, sizeof(szErrorMessage), "File dialog error: 0x%08X", dwError);
+                        MessageBoxA(hwnd, szErrorMessage, "Error", MB_OK | MB_ICONERROR);
+                    }
+                }
+            }
+            else if(LOWORD(wParam) == 3 && HIWORD(wParam) == BN_CLICKED)
+            {
+                OPENFILENAMEA ofn;
+                char szFile[MAX_PATH] = {0};
+
+                ZeroMemory(&ofn, sizeof(ofn));
+                ofn.lStructSize = sizeof(ofn);
+                ofn.hwndOwner = NULL;
+                ofn.lpstrFile = szFile;
+                ofn.lpstrFilter = "Manifest\0*.manifest\0";
+                ofn.nMaxFile = MAX_PATH;
+                ofn.lpstrTitle = "Select your manifest";
+                ofn.Flags = OFN_PATHMUSTEXIST | OFN_FILEMUSTEXIST;
+                if(GetOpenFileNameA(&ofn))
+                {
+                    strcpy(manifestPath, szFile);
                 }
                 else
                 {
@@ -289,7 +329,7 @@ int main(int argc, char **argv)
             "STATIC",
             "Made by Strahinja Adamov (c) - 2024",
             WS_VISIBLE | WS_CHILD,
-            3, 152, 300, 20,
+            3, 155, 300, 20,
             hwnd,
             NULL,
             GetModuleHandle(NULL),
@@ -298,9 +338,9 @@ int main(int argc, char **argv)
 
     HWND title = CreateWindowA(
             "STATIC",
-            "Manifest Builder 1.1",
+            "Manifest Builder 1.5",
             WS_VISIBLE | WS_CHILD,
-            63, 10, 300, 20,
+            63, 5, 300, 20,
             hwnd,
             NULL,
             GetModuleHandle(NULL),
@@ -311,7 +351,7 @@ int main(int argc, char **argv)
             "BUTTON",
             "Build",
             WS_VISIBLE | WS_CHILD | BS_FLAT,
-            100, 110, 100, 30, 
+            100, 125, 100, 30, 
             hwnd,
             (HMENU)1,
             GetModuleHandle(NULL),
@@ -320,11 +360,22 @@ int main(int argc, char **argv)
 
     HWND selectButton = CreateWindowA(
             "BUTTON",
-            "Select",
+            "Select .exe",
             WS_VISIBLE | WS_CHILD | BS_FLAT,
-            100, 60, 100, 30, 
+            90, 40, 120, 30, 
             hwnd,
             (HMENU)2,
+            GetModuleHandle(NULL),
+            NULL
+            );
+
+    HWND selectButton2 = CreateWindowA(
+            "BUTTON",
+            "Select .manifest",
+            WS_VISIBLE | WS_CHILD | BS_FLAT,
+            75, 83, 150, 30, 
+            hwnd,
+            (HMENU)3,
             GetModuleHandle(NULL),
             NULL
             );
@@ -337,6 +388,7 @@ int main(int argc, char **argv)
 
     SendMessage(buildButton, WM_SETFONT, (WPARAM)hFont, TRUE);
     SendMessage(selectButton, WM_SETFONT, (WPARAM)hFont, TRUE);
+    SendMessage(selectButton2, WM_SETFONT, (WPARAM)hFont, TRUE);
     SendMessage(credits, WM_SETFONT, (WPARAM)cFont, TRUE);
     SendMessage(title, WM_SETFONT, (WPARAM)titleFont, TRUE);
 
