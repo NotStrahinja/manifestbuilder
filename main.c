@@ -117,27 +117,6 @@ BOOL updateManifest(const char *output, const char *manifest)
     return TRUE;
 }
 
-BOOL updateManifestFromMemory(const char *output, const char *manifestContent, int id)
-{
-    HANDLE hUpdateRes = BeginUpdateResourceA(output, FALSE);
-    if(!hUpdateRes) return FALSE;
-
-    BOOL result = UpdateResourceA(
-        hUpdateRes,
-        RT_MANIFEST,
-        MAKEINTRESOURCEA(id),
-        MAKELANGID(LANG_ENGLISH, SUBLANG_ENGLISH_US),
-        (LPVOID)manifestContent,
-        (DWORD)strlen(manifestContent)
-    );
-
-    if(!result || !EndUpdateResource(hUpdateRes, FALSE))
-    {
-        return FALSE;
-    }
-    return TRUE;
-}
-
 char exePath[MAX_PATH];
 HWND buildButton;
 
